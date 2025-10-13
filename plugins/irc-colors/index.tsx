@@ -1,4 +1,4 @@
-const { GuildMemberStore, ChannelStore } =
+const { GuildMemberStore, ChannelStore, LayerStore } =
     shelter.flux.storesFlat;
 const {
     util: { getFiber, reactFiberWalker },
@@ -76,7 +76,7 @@ export function onLoad() {
             ?.pendingProps?.message;
         if (!message) return;
 
-        if (store.respectRoles) {
+        if (store.respectRoles && !LayerStore.getLayers().includes('USER_SETTINGS')) {
             const { type, guild_id } = ChannelStore.getChannel(message.channel_id);
             if (type === 0) {
                 // message in a guild, check if user has a role color
