@@ -29,17 +29,15 @@ const calculateNameColorForUser = (() => {
     };
 })();
 
-function handleAnyUsername(user_id: string, name_elem: HTMLElement, observed_elem: HTMLElement) {
+function handleAnyUsername(user_id: string, name_elem: HTMLElement) {
     if (name_elem.style.color && store.respectRoles) {
         // name_elem already has a color set directly
-        observed_elem.setAttribute(`data-${hopefully_unique_id}`, "true");
         return;
     }
 
     const color = calculateNameColorForUser(user_id);
     if (color) {
         name_elem.style.color = color;
-        observed_elem.setAttribute(`data-${hopefully_unique_id}`, "true");
     }
 }
 
@@ -72,6 +70,8 @@ export function onLoad() {
 
     // messages
     unObserveCallbacks.push(observeDom(`[id*=message-username-]:not([data-${hopefully_unique_id}])`, (elem) => {
+        elem.setAttribute(`data-${hopefully_unique_id}`, "true");
+
         const message = reactFiberWalker(getFiber(elem), "message", true)
             ?.pendingProps?.message;
         if (!message) return;
@@ -89,24 +89,28 @@ export function onLoad() {
         const usernameElem = elem.firstElementChild;
         if (!usernameElem || !(usernameElem instanceof HTMLElement)) return;
 
-        handleAnyUsername(message.author.id, usernameElem, elem as HTMLElement);
+        handleAnyUsername(message.author.id, usernameElem);
         if (desaturateClass) usernameElem.classList.add(desaturateClass);
     }));
 
     // member list
     unObserveCallbacks.push(observeDom(`[class*=nameContainer__]:not([data-${hopefully_unique_id}])`, (elem) => {
+        elem.setAttribute(`data-${hopefully_unique_id}`, "true");
+
         const user = reactFiberWalker(getFiber(elem), "user", true)?.pendingProps?.user;
         if (!user) return;
 
-        handleAnyUsername(user.id, elem as HTMLElement, elem as HTMLElement);
+        handleAnyUsername(user.id, elem as HTMLElement);
     }));
 
     // replied message authors
     unObserveCallbacks.push(observeDom(`[class*=repliedMessage_] [class*=username_]:not([data-${hopefully_unique_id}])`, (elem) => {
+        elem.setAttribute(`data-${hopefully_unique_id}`, "true");
+
         const user = reactFiberWalker(getFiber(elem), "user", true)?.pendingProps?.user;
         if (!user) return;
 
-        handleAnyUsername(user.id, elem as HTMLElement, elem as HTMLElement);
+        handleAnyUsername(user.id, elem as HTMLElement);
         if (desaturateClass) elem.classList.add(desaturateClass);
     }));
 }
