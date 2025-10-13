@@ -1,14 +1,15 @@
+/// <reference path="../../node_modules/@uwu/shelter-defs/dist/shelter-defs/rootdefs.d.ts" />
+
 const { GuildMemberStore, ChannelStore, LayerStore } =
     shelter.flux.storesFlat;
 const {
     util: { getFiber, reactFiberWalker },
     plugin: { store },
-    ui: { SwitchItem: _SwitchItem },
+    ui: { SwitchItem },
     observeDom,
 } = shelter;
 
 import { xxHash32 } from "js-xxhash";
-import { ReactNode } from "react";
 
 const hopefully_unique_id = "irc-colors-gingeh";
 
@@ -42,10 +43,8 @@ function handleAnyUsername(user_id: string, name_elem: HTMLElement) {
 }
 
 store.respectRoles ??= true;
-
-const SwitchItem = _SwitchItem as (props: Parameters<typeof _SwitchItem>[0]) => ReactNode | Promise<ReactNode>; // hack to appease the typescript gods
 export const settings = () => (
-    <SwitchItem value={store.respectRoles} onChange={(v) => { store.respectRoles = v }}>
+    <SwitchItem value={store.respectRoles} onChange={(v: boolean) => { store.respectRoles = v }}>
         Don't override existing role colors.
     </SwitchItem>
 )

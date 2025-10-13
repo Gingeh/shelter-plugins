@@ -1,14 +1,13 @@
+/// <reference path="../../node_modules/@uwu/shelter-defs/dist/shelter-defs/rootdefs.d.ts" />
+
 const {
     plugin: { store },
-    ui: { SwitchItem: _SwitchItem },
+    ui: { SwitchItem },
     observeDom,
 } = shelter;
 
-import { ReactNode } from "react";
-
 const hopefully_unique_id = "annoyances-gingeh";
 
-const SwitchItem = _SwitchItem as (props: Parameters<typeof _SwitchItem>[0]) => ReactNode | Promise<ReactNode>; // hack to appease the typescript gods
 export const settings = () => (
     <>
         <SwitchItem value={store.member_list_backgrounds} onChange={(v: boolean) => { store.member_list_backgrounds = v; }}>
