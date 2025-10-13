@@ -1,0 +1,5 @@
+{
+  "name": "IrcColors",
+  "author": "Gingeh",
+  "description": "Makes username colors in chat unique, like in IRC clients. (loosely ported from Vencord)"
+}
