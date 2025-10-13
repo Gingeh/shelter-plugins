@@ -1,6 +1,7 @@
 {
   "devDependencies": {
     "@types/react": "^19.2.2",
+    "@types/suncalc": "^1.9.2",
     "@uwu/lune": "^1.5.0",
     "@uwu/shelter-defs": "^1.4.1"
   },
@@ -9,6 +10,8 @@
     "plugins/*"
   ],
   "dependencies": {
-    "js-xxhash": "^4.0.0"
+    "js-xxhash": "^4.0.0",
+    "pyodide": "^0.28.3",
+    "suncalc": "^1.9.0"
   }
 }

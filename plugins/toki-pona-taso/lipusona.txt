@@ -1,0 +1,30 @@
+# "ale" li wile ala
+# "penpo" li wile e tenpo pi toki pona taso
+# "tawa_jan" li wile e ni: sina toki tawa jan pi mute lili
+# "nanpa_kulupu(12345)" li wile e ni: sina toki tawa kulupu nanpa "12345"
+# "nanpa_tomo(12345)" li wile e ni: sina toki lon tomo nanpa "12345"
+# "nimi_kulupu(regex)" li wile e ni: sina toki tawa kulupu la, nimi ona li pona tawa "regex"
+# "nimi_tomo(regex)" li wile e ni: sina toki lon tomo la, nimi ona li pona tawa "regex"
+
+# "> ken" li toki e ni: lon ni la, tenpo ni la, sina ken toki ante
+# "> ala" li toki e ni: lon ni la, tenpo ni la, sina ken ala toki ante
+
+# TODO: figure out how to explain that multiple predicates == AND
+# TODO: figure out how to explain that higher predicate groups have higher priority
+
+nimi_kulupu(ma pona)
+penpo
+> ala
+
+nimi_tomo(tpt)
+> ala
+
+nimi_kulupu(^ma mun$)
+nimi_tomo(toki-inli)
+> ken
+
+nimi_kulupu(^ma mun$)
+> ala
+
+ale
+> ken
