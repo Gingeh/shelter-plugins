@@ -39,7 +39,7 @@ export function onLoad() {
     store.member_list_backgrounds ??= true;
     if (store.member_list_backgrounds) {
         cleanup_callbacks.push(observeDom("[class*=nameplated__] > [class*=container__]", (elem) => {
-            elem.remove();
+            elem.style.display = "none";
         }));
     }
 
@@ -47,7 +47,7 @@ export function onLoad() {
     store.avatar_decorations ??= true;
     if (store.avatar_decorations) {
         cleanup_callbacks.push(observeDom("[class*=avatarDecoration__]", (elem) => {
-            elem.remove();
+            elem.style.display = "none";
         }));
     }
 
@@ -73,7 +73,7 @@ export function onLoad() {
     store.gift_button ??= true;
     if (store.gift_button) {
         cleanup_callbacks.push(observeDom("[aria-label*=gift][class*=button__]", (elem) => {
-            elem.remove();
+            elem.style.display = "none";
         }));
     }
 
@@ -81,7 +81,7 @@ export function onLoad() {
     store.quests_button ??= true;
     if (store.quests_button) {
         cleanup_callbacks.push(observeDom("[href*=quest-home]", (elem) => {
-            elem.remove();
+            elem.style.display = "none";
         }));
     }
 
@@ -90,14 +90,14 @@ export function onLoad() {
     if (store.boosts_button) {
         cleanup_callbacks.push(observeDom(`[class*=basicChannelRowLink__]:not([data-${hopefully_unique_id}])`, (elem) => {
             if (elem.querySelector("[class*=name__] span")?.textContent.includes("Boosts")) {
-                elem.remove();
+                elem.style.display = "none";
             } else {
                 elem.setAttribute(`data-${hopefully_unique_id}`, "true");
             }
         }));
 
         cleanup_callbacks.push(observeDom("[class*=containerWithMargin__]:has([class*=progressContainer__])", (elem) => {
-            elem.remove();
+            elem.style.display = "none";
         }));
     }
 }
