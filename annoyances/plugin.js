@@ -35,9 +35,8 @@ var require_web = __commonJS({ "solid-js/web"(exports, module) {
 //#endregion
 //#region plugins/annoyances/index.tsx
 var import_web = __toESM(require_web(), 1);
-const { plugin: { store }, ui: { SwitchItem: _SwitchItem }, observeDom } = shelter;
+const { plugin: { store }, ui: { SwitchItem }, observeDom } = shelter;
 const hopefully_unique_id = "annoyances-gingeh";
-const SwitchItem = _SwitchItem;
 const settings = () => [
 	(0, import_web.createComponent)(SwitchItem, {
 		get value() {
@@ -108,7 +107,7 @@ function onLoad() {
 	if (store.fancy_profile_themes) cleanup_callbacks.push(observeDom(`.custom-theme-background:not([data-${hopefully_unique_id}])`, (elem) => {
 		elem.classList.remove("custom-theme-background");
 		elem.classList.remove("custom-user-profile-theme");
-		elem.style = "--profile-gradient-primary-color: var(--background-surface-high); --profile-gradient-secondary-color: var(--background-surface-high); --profile-gradient-overlay-color: rgba(0, 0, 0, 0); --profile-gradient-button-color: var(--background-mod-subtle); --profile-gradient-modal-background-color: var(--background-base-lower);";
+		elem.style = "--profile-gradient-primary-color: var(--background-surface-high);--profile-gradient-secondary-color: var(--background-surface-high);--profile-gradient-overlay-color: rgba(0, 0, 0, 0);--profile-gradient-button-color: var(--background-mod-subtle);--profile-gradient-modal-background-color: var(--background-base-lower);";
 		const mask_circle = elem.querySelector("circle");
 		if (mask_circle) {
 			mask_circle.setAttribute("cx", "56");

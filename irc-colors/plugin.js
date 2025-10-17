@@ -97,8 +97,8 @@ function xxHash32(input, seed = 0) {
 //#endregion
 //#region plugins/irc-colors/index.tsx
 var import_web = __toESM(require_web(), 1);
-const { GuildMemberStore, ChannelStore } = shelter.flux.storesFlat;
-const { util: { getFiber, reactFiberWalker }, plugin: { store }, ui: { SwitchItem: _SwitchItem }, observeDom } = shelter;
+const { GuildMemberStore, ChannelStore, LayerStore } = shelter.flux.storesFlat;
+const { util: { getFiber, reactFiberWalker }, plugin: { store }, ui: { SwitchItem }, observeDom } = shelter;
 const hopefully_unique_id = "irc-colors-gingeh";
 const calculateNameColorForUser = (() => {
 	const _calculateNameColorForUser = (user_id) => {
@@ -119,7 +119,6 @@ function handleAnyUsername(user_id, name_elem) {
 	if (color) name_elem.style.color = color;
 }
 store.respectRoles ??= true;
-const SwitchItem = _SwitchItem;
 const settings = () => (0, import_web.createComponent)(SwitchItem, {
 	get value() {
 		return store.respectRoles;
@@ -144,7 +143,7 @@ function onLoad() {
 		elem.setAttribute(`data-${hopefully_unique_id}`, "true");
 		const message = reactFiberWalker(getFiber(elem), "message", true)?.pendingProps?.message;
 		if (!message) return;
-		if (store.respectRoles) {
+		if (store.respectRoles && !LayerStore.getLayers().includes("USER_SETTINGS")) {
 			const { type, guild_id } = ChannelStore.getChannel(message.channel_id);
 			if (type === 0) {
 				const member = GuildMemberStore.getMember(guild_id, message.author.id);
