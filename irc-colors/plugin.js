@@ -113,16 +113,10 @@ const calculateNameColorForUser = (() => {
 		return color;
 	};
 })();
-function handleAnyUsername(user_id, name_elem, observed_elem) {
-	if (name_elem.style.color && store.respectRoles) {
-		observed_elem.setAttribute(`data-${hopefully_unique_id}`, "true");
-		return;
-	}
+function handleAnyUsername(user_id, name_elem) {
+	if (name_elem.style.color && store.respectRoles) return;
 	const color = calculateNameColorForUser(user_id);
-	if (color) {
-		name_elem.style.color = color;
-		observed_elem.setAttribute(`data-${hopefully_unique_id}`, "true");
-	}
+	if (color) name_elem.style.color = color;
 }
 store.respectRoles ??= true;
 const SwitchItem = _SwitchItem;
@@ -147,6 +141,7 @@ function onLoad() {
 		}
 	}
 	unObserveCallbacks.push(observeDom(`[id*=message-username-]:not([data-${hopefully_unique_id}])`, (elem) => {
+		elem.setAttribute(`data-${hopefully_unique_id}`, "true");
 		const message = reactFiberWalker(getFiber(elem), "message", true)?.pendingProps?.message;
 		if (!message) return;
 		if (store.respectRoles) {
@@ -159,18 +154,20 @@ function onLoad() {
 		}
 		const usernameElem = elem.firstElementChild;
 		if (!usernameElem || !(usernameElem instanceof HTMLElement)) return;
-		handleAnyUsername(message.author.id, usernameElem, elem);
+		handleAnyUsername(message.author.id, usernameElem);
 		if (desaturateClass) usernameElem.classList.add(desaturateClass);
 	}));
 	unObserveCallbacks.push(observeDom(`[class*=nameContainer__]:not([data-${hopefully_unique_id}])`, (elem) => {
+		elem.setAttribute(`data-${hopefully_unique_id}`, "true");
 		const user = reactFiberWalker(getFiber(elem), "user", true)?.pendingProps?.user;
 		if (!user) return;
-		handleAnyUsername(user.id, elem, elem);
+		handleAnyUsername(user.id, elem);
 	}));
 	unObserveCallbacks.push(observeDom(`[class*=repliedMessage_] [class*=username_]:not([data-${hopefully_unique_id}])`, (elem) => {
+		elem.setAttribute(`data-${hopefully_unique_id}`, "true");
 		const user = reactFiberWalker(getFiber(elem), "user", true)?.pendingProps?.user;
 		if (!user) return;
-		handleAnyUsername(user.id, elem, elem);
+		handleAnyUsername(user.id, elem);
 		if (desaturateClass) elem.classList.add(desaturateClass);
 	}));
 }
