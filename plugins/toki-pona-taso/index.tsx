@@ -9,8 +9,6 @@ const {
 const { ChannelStore, SelectedChannelStore, GuildStore } =
   shelter.flux.storesFlat;
 
-import * as SunCalc from "suncalc";
-
 const hopefully_unique_id = "toki-pona-taso-gingeh";
 
 // "ale" li wile ala
@@ -91,21 +89,14 @@ function parse_predicate(line: string): FilterPredicate {
   }
 }
 
-function predicate_matches(
+async function predicate_matches(
   predicate: FilterPredicate,
   channel_id: string
-): boolean {
+): Promise<boolean> {
   if (predicate.name === "ale") {
     return true;
   } else if (predicate.name === "penpo") {
-    const { phase: phase_now } = SunCalc.getMoonIllumination(
-      new Date(Date.now())
-    );
-    const { phase: phase_two_days_ago } = SunCalc.getMoonIllumination(
-      new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-    );
-    // return true if both phases are on opposite sides of 0.5 (full moon) and 1.0 (new moon)
-    return phase_now < 0.5 !== phase_two_days_ago < 0.5;
+    return (await python_wrapper)!.is_tenpo_penpo();
   } else if (predicate.name === "tawa_jan") {
     const { type } = ChannelStore.getChannel(channel_id);
     return (
@@ -135,9 +126,9 @@ type FilterRule = {
   predicates: FilterPredicate[];
 };
 
-function rule_matches(rule: FilterRule, channel_id: string): boolean {
+async function rule_matches(rule: FilterRule, channel_id: string): Promise<boolean> {
   for (const predicate of rule.predicates) {
-    if (!predicate_matches(predicate, channel_id)) return false;
+    if (!await predicate_matches(predicate, channel_id)) return false;
   }
   return true;
 }
@@ -180,9 +171,9 @@ function parse_config(lines: string): FilterConfig {
   return { rules };
 }
 
-function kenTokiAnte(config: FilterConfig, channel_id: string): KenAlaKen {
+async function kenTokiAnte(config: FilterConfig, channel_id: string): Promise<KenAlaKen> {
   for (const rule of config.rules) {
-    if (rule_matches(rule, channel_id)) {
+    if (await rule_matches(rule, channel_id)) {
       return rule.verdict;
     }
   }
@@ -264,7 +255,7 @@ export const settings = () => (
 
 async function should_prevent_sending(editor: any): Promise<boolean> {
   const channel_id = SelectedChannelStore.getChannelId();
-  if (kenTokiAnte(store.filterConfig, channel_id) === "ken") return false;
+  if (await kenTokiAnte(store.filterConfig, channel_id) === "ken") return false;
 
   editor.previewMarkdown = false;
   editor.onChange();
@@ -273,7 +264,7 @@ async function should_prevent_sending(editor: any): Promise<boolean> {
     .join("\n");
   editor.previewMarkdown = true;
 
-  return !(await ilo)?.is_toki_pona(text);
+  return !(await python_wrapper)?.is_toki_pona(text);
 }
 
 function try_shake_screen() {
@@ -311,7 +302,14 @@ async function onKeydown(this: HTMLElement, event: Event) {
   })(this, event as KeyboardEvent);
 }
 
-async function load_ilo(): Promise<Ilo> {
+interface PythonWrapper {
+  is_toki_pona: (text: string) => boolean;
+  is_tenpo_penpo: () => boolean;
+}
+
+let python_wrapper: Promise<PythonWrapper> | null = null;
+
+async function load_python_wrapper(): Promise<PythonWrapper> {
   // hack to make pyodide correctly detect the environment
   window["sessionStorage"] = {
     length: 0,
@@ -333,26 +331,54 @@ async function load_ilo(): Promise<Ilo> {
 
   await pyodide.loadPackage("micropip");
   const micropip = pyodide.pyimport("micropip");
+
   await micropip.install("sonatoki");
 
+  await micropip.add_mock_package("sgp4", "2.25");
+  await micropip.install("skyfield");
+  await micropip.remove_mock_package("sgp4");
+  await micropip.install("https://gingeh.github.io/shelter-plugins/assets/sgp4_pure_python-2.25-py3-none-any.whl");
+
+  const bsp = await fetch("https://gingeh.github.io/shelter-plugins/assets/de440s.bsp");
+  pyodide.FS.writeFile("de440s.bsp", await bsp.bytes());
+
   return pyodide.runPythonAsync(`
+        import datetime
+
         from sonatoki.ilo import Ilo
         from sonatoki.Configs import PrefConfig
-        Ilo(**PrefConfig)
+
+        from skyfield.api import load_file as skyfield_load
+        from skyfield import almanac
+
+        class PythonWrapper:
+            def __init__(self):
+                self.ilo = Ilo(**PrefConfig)
+                self.eph = skyfield_load('de440s.bsp')
+
+            def is_toki_pona(self, text: str) -> bool:
+                return self.ilo.is_toki_pona(text)
+
+            def is_tenpo_penpo(self) -> bool:
+                from skyfield import api
+                ts = api.load.timescale()
+                now = ts.now()
+                two_days_ago = ts.from_datetime(now.utc_datetime() + datetime.timedelta(days=-2))
+
+                phase_now = almanac.moon_phase(self.eph, now).degrees / 360.0
+                phase_two_days_ago = almanac.moon_phase(self.eph, two_days_ago).degrees / 360.0
+
+                return (phase_now < 0.5) != (phase_two_days_ago < 0.5)
+
+        PythonWrapper()
     `);
 }
 
 let unobserve = () => {};
 let removeCSS = () => {};
 
-interface Ilo {
-  is_toki_pona: (text: string) => Promise<boolean>;
-}
-
-let ilo: Promise<Ilo> | null = null;
-
 export async function onLoad() {
-  ilo = load_ilo();
+  python_wrapper = load_python_wrapper();
   removeCSS = injectCss(`
         @font-face {
             font-family: "sitelenselikiwenmonojuniko";
@@ -374,7 +400,7 @@ export async function onLoad() {
 }
 
 export function onUnload() {
-  ilo = null;
+  python_wrapper = null;
   unobserve();
   removeCSS();
   for (const elem of document.querySelectorAll(
