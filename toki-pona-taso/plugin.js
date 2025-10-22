@@ -42,217 +42,10 @@ var require_web = __commonJS({ "solid-js/web"(exports, module) {
 } });
 
 //#endregion
-//#region node_modules/.pnpm/suncalc@1.9.0/node_modules/suncalc/suncalc.js
-var require_suncalc = __commonJS({ "node_modules/.pnpm/suncalc@1.9.0/node_modules/suncalc/suncalc.js"(exports, module) {
-	(function() {
-		"use strict";
-		var PI = Math.PI, sin = Math.sin, cos = Math.cos, tan = Math.tan, asin = Math.asin, atan = Math.atan2, acos = Math.acos, rad = PI / 180;
-		var dayMs = 864e5, J1970 = 2440588, J2000 = 2451545;
-		function toJulian(date) {
-			return date.valueOf() / dayMs - .5 + J1970;
-		}
-		function fromJulian(j$1) {
-			return new Date((j$1 + .5 - J1970) * dayMs);
-		}
-		function toDays(date) {
-			return toJulian(date) - J2000;
-		}
-		var e = rad * 23.4397;
-		function rightAscension(l, b$1) {
-			return atan(sin(l) * cos(e) - tan(b$1) * sin(e), cos(l));
-		}
-		function declination(l, b$1) {
-			return asin(sin(b$1) * cos(e) + cos(b$1) * sin(e) * sin(l));
-		}
-		function azimuth(H$1, phi, dec) {
-			return atan(sin(H$1), cos(H$1) * sin(phi) - tan(dec) * cos(phi));
-		}
-		function altitude(H$1, phi, dec) {
-			return asin(sin(phi) * sin(dec) + cos(phi) * cos(dec) * cos(H$1));
-		}
-		function siderealTime(d, lw) {
-			return rad * (280.16 + 360.9856235 * d) - lw;
-		}
-		function astroRefraction(h$1) {
-			if (h$1 < 0) h$1 = 0;
-			return 2967e-7 / Math.tan(h$1 + .00312536 / (h$1 + .08901179));
-		}
-		function solarMeanAnomaly(d) {
-			return rad * (357.5291 + .98560028 * d);
-		}
-		function eclipticLongitude(M$1) {
-			var C$1 = rad * (1.9148 * sin(M$1) + .02 * sin(2 * M$1) + 3e-4 * sin(3 * M$1)), P$1 = rad * 102.9372;
-			return M$1 + C$1 + P$1 + PI;
-		}
-		function sunCoords(d) {
-			var M$1 = solarMeanAnomaly(d), L$1 = eclipticLongitude(M$1);
-			return {
-				dec: declination(L$1, 0),
-				ra: rightAscension(L$1, 0)
-			};
-		}
-		var SunCalc = {};
-		SunCalc.getPosition = function(date, lat, lng) {
-			var lw = rad * -lng, phi = rad * lat, d = toDays(date), c = sunCoords(d), H$1 = siderealTime(d, lw) - c.ra;
-			return {
-				azimuth: azimuth(H$1, phi, c.dec),
-				altitude: altitude(H$1, phi, c.dec)
-			};
-		};
-		var times = SunCalc.times = [
-			[
-				-.833,
-				"sunrise",
-				"sunset"
-			],
-			[
-				-.3,
-				"sunriseEnd",
-				"sunsetStart"
-			],
-			[
-				-6,
-				"dawn",
-				"dusk"
-			],
-			[
-				-12,
-				"nauticalDawn",
-				"nauticalDusk"
-			],
-			[
-				-18,
-				"nightEnd",
-				"night"
-			],
-			[
-				6,
-				"goldenHourEnd",
-				"goldenHour"
-			]
-		];
-		SunCalc.addTime = function(angle, riseName, setName) {
-			times.push([
-				angle,
-				riseName,
-				setName
-			]);
-		};
-		var J0 = 9e-4;
-		function julianCycle(d, lw) {
-			return Math.round(d - J0 - lw / (2 * PI));
-		}
-		function approxTransit(Ht, lw, n) {
-			return J0 + (Ht + lw) / (2 * PI) + n;
-		}
-		function solarTransitJ(ds, M$1, L$1) {
-			return J2000 + ds + .0053 * sin(M$1) - .0069 * sin(2 * L$1);
-		}
-		function hourAngle(h$1, phi, d) {
-			return acos((sin(h$1) - sin(phi) * sin(d)) / (cos(phi) * cos(d)));
-		}
-		function observerAngle(height) {
-			return -2.076 * Math.sqrt(height) / 60;
-		}
-		function getSetJ(h$1, lw, phi, dec, n, M$1, L$1) {
-			var w = hourAngle(h$1, phi, dec), a = approxTransit(w, lw, n);
-			return solarTransitJ(a, M$1, L$1);
-		}
-		SunCalc.getTimes = function(date, lat, lng, height) {
-			height = height || 0;
-			var lw = rad * -lng, phi = rad * lat, dh = observerAngle(height), d = toDays(date), n = julianCycle(d, lw), ds = approxTransit(0, lw, n), M$1 = solarMeanAnomaly(ds), L$1 = eclipticLongitude(M$1), dec = declination(L$1, 0), Jnoon = solarTransitJ(ds, M$1, L$1), i, len, time, h0, Jset, Jrise;
-			var result = {
-				solarNoon: fromJulian(Jnoon),
-				nadir: fromJulian(Jnoon - .5)
-			};
-			for (i = 0, len = times.length; i < len; i += 1) {
-				time = times[i];
-				h0 = (time[0] + dh) * rad;
-				Jset = getSetJ(h0, lw, phi, dec, n, M$1, L$1);
-				Jrise = Jnoon - (Jset - Jnoon);
-				result[time[1]] = fromJulian(Jrise);
-				result[time[2]] = fromJulian(Jset);
-			}
-			return result;
-		};
-		function moonCoords(d) {
-			var L$1 = rad * (218.316 + 13.176396 * d), M$1 = rad * (134.963 + 13.064993 * d), F$1 = rad * (93.272 + 13.22935 * d), l = L$1 + rad * 6.289 * sin(M$1), b$1 = rad * 5.128 * sin(F$1), dt = 385001 - 20905 * cos(M$1);
-			return {
-				ra: rightAscension(l, b$1),
-				dec: declination(l, b$1),
-				dist: dt
-			};
-		}
-		SunCalc.getMoonPosition = function(date, lat, lng) {
-			var lw = rad * -lng, phi = rad * lat, d = toDays(date), c = moonCoords(d), H$1 = siderealTime(d, lw) - c.ra, h$1 = altitude(H$1, phi, c.dec), pa = atan(sin(H$1), tan(phi) * cos(c.dec) - sin(c.dec) * cos(H$1));
-			h$1 = h$1 + astroRefraction(h$1);
-			return {
-				azimuth: azimuth(H$1, phi, c.dec),
-				altitude: h$1,
-				distance: c.dist,
-				parallacticAngle: pa
-			};
-		};
-		SunCalc.getMoonIllumination = function(date) {
-			var d = toDays(date || new Date()), s = sunCoords(d), m = moonCoords(d), sdist = 149598e3, phi = acos(sin(s.dec) * sin(m.dec) + cos(s.dec) * cos(m.dec) * cos(s.ra - m.ra)), inc = atan(sdist * sin(phi), m.dist - sdist * cos(phi)), angle = atan(cos(s.dec) * sin(s.ra - m.ra), sin(s.dec) * cos(m.dec) - cos(s.dec) * sin(m.dec) * cos(s.ra - m.ra));
-			return {
-				fraction: (1 + cos(inc)) / 2,
-				phase: .5 + .5 * inc * (angle < 0 ? -1 : 1) / Math.PI,
-				angle
-			};
-		};
-		function hoursLater(date, h$1) {
-			return new Date(date.valueOf() + h$1 * dayMs / 24);
-		}
-		SunCalc.getMoonTimes = function(date, lat, lng, inUTC) {
-			var t = new Date(date);
-			if (inUTC) t.setUTCHours(0, 0, 0, 0);
-else t.setHours(0, 0, 0, 0);
-			var hc = .133 * rad, h0 = SunCalc.getMoonPosition(t, lat, lng).altitude - hc, h1, h2, rise, set, a, b$1, xe, ye$1, d, roots, x1, x2, dx;
-			for (var i = 1; i <= 24; i += 2) {
-				h1 = SunCalc.getMoonPosition(hoursLater(t, i), lat, lng).altitude - hc;
-				h2 = SunCalc.getMoonPosition(hoursLater(t, i + 1), lat, lng).altitude - hc;
-				a = (h0 + h2) / 2 - h1;
-				b$1 = (h2 - h0) / 2;
-				xe = -b$1 / (2 * a);
-				ye$1 = (a * xe + b$1) * xe + h1;
-				d = b$1 * b$1 - 4 * a * h1;
-				roots = 0;
-				if (d >= 0) {
-					dx = Math.sqrt(d) / (Math.abs(a) * 2);
-					x1 = xe - dx;
-					x2 = xe + dx;
-					if (Math.abs(x1) <= 1) roots++;
-					if (Math.abs(x2) <= 1) roots++;
-					if (x1 < -1) x1 = x2;
-				}
-				if (roots === 1) if (h0 < 0) rise = i + x1;
-else set = i + x1;
-else if (roots === 2) {
-					rise = i + (ye$1 < 0 ? x2 : x1);
-					set = i + (ye$1 < 0 ? x1 : x2);
-				}
-				if (rise && set) break;
-				h0 = h2;
-			}
-			var result = {};
-			if (rise) result.rise = hoursLater(t, rise);
-			if (set) result.set = hoursLater(t, set);
-			if (!rise && !set) result[ye$1 > 0 ? "alwaysUp" : "alwaysDown"] = true;
-			return result;
-		};
-		if (typeof exports === "object" && typeof module !== "undefined") module.exports = SunCalc;
-else if (typeof define === "function" && define.amd) define(SunCalc);
-else window.SunCalc = SunCalc;
-	})();
-} });
-
-//#endregion
 //#region plugins/toki-pona-taso/index.tsx
 var import_web = __toESM(require_web(), 1);
 var import_web$1 = __toESM(require_web(), 1);
 var import_web$2 = __toESM(require_web(), 1);
-var import_suncalc = __toESM(require_suncalc(), 1);
 const _tmpl$ = /*#__PURE__*/ (0, import_web.template)(`<br>`, 1);
 const { util: { getFiber, getFiberOwner }, ui: { showToast, Text, LinkButton, TextArea, injectCss, ReactiveRoot }, plugin: { store: _store }, observeDom } = shelter;
 const { ChannelStore, SelectedChannelStore, GuildStore } = shelter.flux.storesFlat;
@@ -299,13 +92,10 @@ function parse_predicate(line) {
 		}
 	} else throw new Error(`Unknown predicate name: ${name}`);
 }
-function predicate_matches(predicate, channel_id) {
+async function predicate_matches(predicate, channel_id) {
 	if (predicate.name === "ale") return true;
-else if (predicate.name === "penpo") {
-		const { phase: phase_now } = import_suncalc.getMoonIllumination(new Date(Date.now()));
-		const { phase: phase_two_days_ago } = import_suncalc.getMoonIllumination(new Date(Date.now() - 1728e5));
-		return phase_now < .5 !== phase_two_days_ago < .5;
-	} else if (predicate.name === "tawa_jan") {
+else if (predicate.name === "penpo") return (await python_wrapper).is_tenpo_penpo();
+else if (predicate.name === "tawa_jan") {
 		const { type } = ChannelStore.getChannel(channel_id);
 		return type === 1 || type === 3;
 	} else if (predicate.name === "nanpa_kulupu") {
@@ -322,8 +112,8 @@ else if (predicate.name === "nimi_kulupu") {
 	}
 	return true;
 }
-function rule_matches(rule, channel_id) {
-	for (const predicate of rule.predicates) if (!predicate_matches(predicate, channel_id)) return false;
+async function rule_matches(rule, channel_id) {
+	for (const predicate of rule.predicates) if (!await predicate_matches(predicate, channel_id)) return false;
 	return true;
 }
 function parse_config(lines) {
@@ -347,8 +137,8 @@ function parse_config(lines) {
 	if (rules.length === 0) throw new Error("No rules defined");
 	return { rules };
 }
-function kenTokiAnte(config, channel_id) {
-	for (const rule of config.rules) if (rule_matches(rule, channel_id)) return rule.verdict;
+async function kenTokiAnte(config, channel_id) {
+	for (const rule of config.rules) if (await rule_matches(rule, channel_id)) return rule.verdict;
 	return "ken";
 }
 const store = _store;
@@ -418,12 +208,12 @@ const settings = () => (0, import_web$2.createComponent)(ReactiveRoot, { get chi
 } });
 async function should_prevent_sending(editor) {
 	const channel_id = SelectedChannelStore.getChannelId();
-	if (kenTokiAnte(store.filterConfig, channel_id) === "ken") return false;
+	if (await kenTokiAnte(store.filterConfig, channel_id) === "ken") return false;
 	editor.previewMarkdown = false;
 	editor.onChange();
 	const text = editor.children.map((child) => child.children[0].text).join("\n");
 	editor.previewMarkdown = true;
-	return !(await ilo)?.is_toki_pona(text);
+	return !(await python_wrapper)?.is_toki_pona(text);
 }
 function try_shake_screen() {
 	const app = document.querySelector("[class*=app__]");
@@ -451,7 +241,8 @@ async function onKeydown(event) {
 		}
 	})(this, event);
 }
-async function load_ilo() {
+let python_wrapper = null;
+async function load_python_wrapper() {
 	window["sessionStorage"] = {
 		length: 0,
 		clear() {},
@@ -471,17 +262,48 @@ async function load_ilo() {
 	await pyodide.loadPackage("micropip");
 	const micropip = pyodide.pyimport("micropip");
 	await micropip.install("sonatoki");
+	await micropip.add_mock_package("sgp4", "2.25");
+	await micropip.install("skyfield");
+	await micropip.remove_mock_package("sgp4");
+	await micropip.install("https://gingeh.github.io/shelter-plugins/assets/sgp4_pure_python-2.25-py3-none-any.whl");
+	const bsp = await fetch("https://gingeh.github.io/shelter-plugins/assets/de440s.bsp");
+	pyodide.FS.writeFile("de440s.bsp", await bsp.bytes());
 	return pyodide.runPythonAsync(`
+        import datetime
+
         from sonatoki.ilo import Ilo
         from sonatoki.Configs import PrefConfig
-        Ilo(**PrefConfig)
+
+        from skyfield.api import load_file as skyfield_load
+        from skyfield import almanac
+
+        class PythonWrapper:
+            def __init__(self):
+                self.ilo = Ilo(**PrefConfig)
+                self.eph = skyfield_load('de440s.bsp')
+
+            def is_toki_pona(self, text: str) -> bool:
+                return self.ilo.is_toki_pona(text)
+
+            def is_tenpo_penpo(self) -> bool:
+                from skyfield import api
+                ts = api.load.timescale()
+                now = ts.now()
+                two_days_ago = ts.from_datetime(now.utc_datetime() + datetime.timedelta(days=-2))
+
+                phase_now = almanac.moon_phase(self.eph, now).degrees / 360.0
+                phase_two_days_ago = almanac.moon_phase(self.eph, two_days_ago).degrees / 360.0
+                print(phase_now, phase_two_days_ago)
+
+                return (phase_now < 0.5) != (phase_two_days_ago < 0.5)
+
+        PythonWrapper()
     `);
 }
 let unobserve = () => {};
 let removeCSS = () => {};
-let ilo = null;
 async function onLoad() {
-	ilo = load_ilo();
+	python_wrapper = load_python_wrapper();
 	removeCSS = injectCss(`
         @font-face {
             font-family: "sitelenselikiwenmonojuniko";
@@ -498,7 +320,7 @@ async function onLoad() {
 	});
 }
 function onUnload() {
-	ilo = null;
+	python_wrapper = null;
 	unobserve();
 	removeCSS();
 	for (const elem of document.querySelectorAll(`[class*=slateContainer_][data-${hopefully_unique_id}]`)) {
@@ -508,328 +330,353 @@ function onUnload() {
 }
 
 //#endregion
-//#region node_modules/.pnpm/pyodide@0.28.3/node_modules/pyodide/pyodide.mjs
+//#region node_modules/.pnpm/pyodide@0.29.0/node_modules/pyodide/pyodide.mjs
 var pyodide_exports = {};
 __export(pyodide_exports, {
-	loadPyodide: () => at,
-	version: () => B
+	loadPyodide: () => ct,
+	version: () => U
 });
-function se(e) {
+function ee(e) {
 	return !isNaN(parseFloat(e)) && isFinite(e);
 }
-function S(e) {
+function P(e) {
 	return e.charAt(0).toUpperCase() + e.substring(1);
 }
-function L(e) {
+function x(e) {
 	return function() {
 		return this[e];
 	};
 }
 function p(e) {
-	if (e) for (var t = 0; t < R.length; t++) e[R[t]] !== void 0 && this["set" + S(R[t])](e[R[t]]);
+	if (e) for (var t = 0; t < F.length; t++) e[F[t]] !== void 0 && this["set" + P(F[t])](e[F[t]]);
 }
-function le() {
+function re() {
 	var e = /^\s*at .*(\S+:\d+|\(native\))/m, t = /^(eval@)?(\[native code])?$/;
 	return {
-		parse: o(function(s) {
-			if (s.stack && s.stack.match(e)) return this.parseV8OrIE(s);
-			if (s.stack) return this.parseFFOrSafari(s);
+		parse: o(function(i) {
+			if (i.stack && i.stack.match(e)) return this.parseV8OrIE(i);
+			if (i.stack) return this.parseFFOrSafari(i);
 			throw new Error("Cannot parse given Error object");
 		}, "ErrorStackParser$$parse"),
-		extractLocation: o(function(s) {
-			if (s.indexOf(":") === -1) return [s];
-			var a = /(.+?)(?::(\d+))?(?::(\d+))?$/, n = a.exec(s.replace(/[()]/g, ""));
+		extractLocation: o(function(i) {
+			if (i.indexOf(":") === -1) return [i];
+			var s = /(.+?)(?::(\d+))?(?::(\d+))?$/, r = s.exec(i.replace(/[()]/g, ""));
 			return [
-				n[1],
-				n[2] || void 0,
-				n[3] || void 0
+				r[1],
+				r[2] || void 0,
+				r[3] || void 0
 			];
 		}, "ErrorStackParser$$extractLocation"),
-		parseV8OrIE: o(function(s) {
-			var a = s.stack.split(`
-`).filter(function(n) {
-				return !!n.match(e);
+		parseV8OrIE: o(function(i) {
+			var s = i.stack.split(`
+`).filter(function(r) {
+				return !!r.match(e);
 			}, this);
-			return a.map(function(n) {
-				n.indexOf("(eval ") > -1 && (n = n.replace(/eval code/g, "eval").replace(/(\(eval at [^()]*)|(,.*$)/g, ""));
-				var i = n.replace(/^\s+/, "").replace(/\(eval code/g, "(").replace(/^.*?\s+/, ""), c = i.match(/ (\(.+\)$)/);
-				i = c ? i.replace(c[0], "") : i;
-				var l = this.extractLocation(c ? c[1] : i), d = c && i || void 0, u = ["eval", "<anonymous>"].indexOf(l[0]) > -1 ? void 0 : l[0];
+			return s.map(function(r) {
+				r.indexOf("(eval ") > -1 && (r = r.replace(/eval code/g, "eval").replace(/(\(eval at [^()]*)|(,.*$)/g, ""));
+				var a = r.replace(/^\s+/, "").replace(/\(eval code/g, "(").replace(/^.*?\s+/, ""), l = a.match(/ (\(.+\)$)/);
+				a = l ? a.replace(l[0], "") : a;
+				var c = this.extractLocation(l ? l[1] : a), d = l && a || void 0, u = ["eval", "<anonymous>"].indexOf(c[0]) > -1 ? void 0 : c[0];
 				return new O({
 					functionName: d,
 					fileName: u,
-					lineNumber: l[1],
-					columnNumber: l[2],
-					source: n
+					lineNumber: c[1],
+					columnNumber: c[2],
+					source: r
 				});
 			}, this);
 		}, "ErrorStackParser$$parseV8OrIE"),
-		parseFFOrSafari: o(function(s) {
-			var a = s.stack.split(`
-`).filter(function(n) {
-				return !n.match(t);
+		parseFFOrSafari: o(function(i) {
+			var s = i.stack.split(`
+`).filter(function(r) {
+				return !r.match(t);
 			}, this);
-			return a.map(function(n) {
-				if (n.indexOf(" > eval") > -1 && (n = n.replace(/ line (\d+)(?: > eval line \d+)* > eval:\d+:\d+/g, ":$1")), n.indexOf("@") === -1 && n.indexOf(":") === -1) return new O({ functionName: n });
-				var i = /((.*".+"[^@]*)?[^@]*)(?:@)/, c = n.match(i), l = c && c[1] ? c[1] : void 0, d = this.extractLocation(n.replace(i, ""));
+			return s.map(function(r) {
+				if (r.indexOf(" > eval") > -1 && (r = r.replace(/ line (\d+)(?: > eval line \d+)* > eval:\d+:\d+/g, ":$1")), r.indexOf("@") === -1 && r.indexOf(":") === -1) return new O({ functionName: r });
+				var a = /((.*".+"[^@]*)?[^@]*)(?:@)/, l = r.match(a), c = l && l[1] ? l[1] : void 0, d = this.extractLocation(r.replace(a, ""));
 				return new O({
-					functionName: l,
+					functionName: c,
 					fileName: d[0],
 					lineNumber: d[1],
 					columnNumber: d[2],
-					source: n
+					source: r
 				});
 			}, this);
 		}, "ErrorStackParser$$parseFFOrSafari")
 	};
 }
-async function C() {
-	if (!g || (J = (await import("node:url")).default, q = await import("node:fs"), U = await import("node:fs/promises"), Y = (await import("node:vm")).default, D = await import("node:path"), M = D.sep, typeof A < "u")) return;
-	let e = q, t = await import("node:crypto"), r = await Promise.resolve().then(function() {
+function oe() {
+	if (typeof API < "u" && API !== globalThis.API) return API.runtimeEnv;
+	let e = typeof Bun < "u", t = typeof Deno < "u", n = typeof process == "object" && typeof process.versions == "object" && typeof process.versions.node == "string" && !process.browser, i = typeof navigator == "object" && typeof navigator.userAgent == "string" && navigator.userAgent.indexOf("Chrome") === -1 && navigator.userAgent.indexOf("Safari") > -1;
+	return ae({
+		IN_BUN: e,
+		IN_DENO: t,
+		IN_NODE: n,
+		IN_SAFARI: i,
+		IN_SHELL: typeof read == "function" && typeof load == "function"
+	});
+}
+function ae(e) {
+	let t = e.IN_NODE && typeof module < "u" && module.exports && typeof A == "function" && typeof __dirname == "string", n = e.IN_NODE && !t, i = !e.IN_NODE && !e.IN_DENO && !e.IN_BUN, s = i && typeof window < "u" && typeof window.document < "u" && typeof document.createElement == "function" && "sessionStorage" in window && typeof globalThis.importScripts != "function", r = i && typeof globalThis.WorkerGlobalScope < "u" && typeof globalThis.self < "u" && globalThis.self instanceof globalThis.WorkerGlobalScope;
+	return {
+		...e,
+		IN_BROWSER: i,
+		IN_BROWSER_MAIN_THREAD: s,
+		IN_BROWSER_WEB_WORKER: r,
+		IN_NODE_COMMONJS: t,
+		IN_NODE_ESM: n
+	};
+}
+async function T() {
+	if (!f.IN_NODE || ($ = (await import("node:url")).default, B = await import("node:fs"), L = await import("node:fs/promises"), H = (await import("node:vm")).default, D = await import("node:path"), C = D.sep, typeof A < "u")) return;
+	let e = B, t = await import("node:crypto"), n = await Promise.resolve().then(function() {
 		return __toESM(require_pyodide(), 1);
-	}), s = await import("node:child_process"), a = {
+	}), i = await import("node:child_process"), s = {
 		fs: e,
 		crypto: t,
-		ws: r,
-		child_process: s
+		ws: n,
+		child_process: i
 	};
-	globalThis.require = function(n) {
-		return a[n];
+	globalThis.require = function(r) {
+		return s[r];
 	};
 }
-function fe(e, t) {
+function se(e, t) {
 	return D.resolve(t || ".", e);
 }
-function me(e, t) {
+function le(e, t) {
 	return t === void 0 && (t = location), new URL(e, t).toString();
 }
-function pe(e, t) {
-	return e.startsWith("file://") && (e = e.slice(7)), e.includes("://") ? { response: fetch(e) } : { binary: U.readFile(e).then((r) => new Uint8Array(r.buffer, r.byteOffset, r.byteLength)) };
+function ce(e, t) {
+	return e.startsWith("file://") && (e = e.slice(7)), e.includes("://") ? { response: fetch(e) } : { binary: L.readFile(e).then((n) => new Uint8Array(n.buffer, n.byteOffset, n.byteLength)) };
 }
-function ge(e, t) {
+function de(e, t) {
 	if (e.startsWith("file://") && (e = e.slice(7)), e.includes("://")) throw new Error("Shell cannot fetch urls");
 	return { binary: Promise.resolve(new Uint8Array(readbuffer(e))) };
 }
-function ye(e, t) {
-	let r = new URL(e, location);
-	return { response: fetch(r, t ? { integrity: t } : {}) };
+function ue(e, t) {
+	let n = new URL(e, location);
+	return { response: fetch(n, t ? { integrity: t } : {}) };
 }
-async function K(e, t) {
-	let { response: r, binary: s } = F(e, t);
-	if (s) return s;
-	let a = await r;
-	if (!a.ok) throw new Error(`Failed to load '${e}': request failed.`);
-	return new Uint8Array(await a.arrayBuffer());
+async function j(e, t) {
+	let { response: n, binary: i } = R(e, t);
+	if (i) return i;
+	let s = await n;
+	if (!s.ok) throw new Error(`Failed to load '${e}': request failed.`);
+	return new Uint8Array(await s.arrayBuffer());
 }
-async function be(e) {
-	e.startsWith("file://") && (e = e.slice(7)), e.includes("://") ? Y.runInThisContext(await (await fetch(e)).text()) : await import(J.pathToFileURL(e).href);
+async function fe(e) {
+	e.startsWith("file://") && (e = e.slice(7)), e.includes("://") ? H.runInThisContext(await (await fetch(e)).text()) : await import($.pathToFileURL(e).href);
 }
-async function G(e) {
-	if (g) {
-		await C();
-		let t = await U.readFile(e, { encoding: "utf8" });
+async function V(e) {
+	if (f.IN_NODE) {
+		await T();
+		let t = await L.readFile(e, { encoding: "utf8" });
 		return JSON.parse(t);
-	} else if (x) {
+	} else if (f.IN_SHELL) {
 		let t = read(e);
 		return JSON.parse(t);
 	} else return await (await fetch(e)).json();
 }
-async function X() {
-	if (T) return __dirname;
+async function z() {
+	if (f.IN_NODE_COMMONJS) return __dirname;
 	let e;
 	try {
 		throw new Error();
-	} catch (s) {
-		e = s;
+	} catch (i) {
+		e = i;
 	}
-	let t = $.parse(e)[0].fileName;
-	if (g && !t.startsWith("file://") && (t = `file://${t}`), j) {
-		let s = await import("node:path");
-		return (await import("node:url")).fileURLToPath(s.dirname(t));
+	let t = M.parse(e)[0].fileName;
+	if (f.IN_NODE && !t.startsWith("file://") && (t = `file://${t}`), f.IN_NODE_ESM) {
+		let i = await import("node:path");
+		return (await import("node:url")).fileURLToPath(i.dirname(t));
 	}
-	let r = t.lastIndexOf(M);
-	if (r === -1) throw new Error("Could not extract indexURL path from pyodide module location");
-	return t.slice(0, r);
+	let n = t.lastIndexOf(C);
+	if (n === -1) throw new Error("Could not extract indexURL path from pyodide module location. Please pass the indexURL explicitly to loadPyodide.");
+	return t.slice(0, n);
 }
-function Q(e) {
+function J(e) {
 	return e.substring(0, e.lastIndexOf("/") + 1) || globalThis.location?.toString() || ".";
 }
-function Z(e) {
-	let t = e.FS, r = e.FS.filesystems.MEMFS, s = e.PATH, a = {
+function q(e) {
+	let t = e.FS, n = e.FS.filesystems.MEMFS, i = e.PATH, s = {
 		DIR_MODE: 16895,
 		FILE_MODE: 33279,
-		mount: o(function(n) {
-			if (!n.opts.fileSystemHandle) throw new Error("opts.fileSystemHandle is required");
-			return r.mount.apply(null, arguments);
+		mount: o(function(r) {
+			if (!r.opts.fileSystemHandle) throw new Error("opts.fileSystemHandle is required");
+			return n.mount.apply(null, arguments);
 		}, "mount"),
-		syncfs: o(async (n, i, c) => {
+		syncfs: o(async (r, a, l) => {
 			try {
-				let l = a.getLocalSet(n), d = await a.getRemoteSet(n), u = i ? d : l, f = i ? l : d;
-				await a.reconcile(n, u, f), c(null);
-			} catch (l) {
-				c(l);
+				let c = s.getLocalSet(r), d = await s.getRemoteSet(r), u = a ? d : c, y = a ? c : d;
+				await s.reconcile(r, u, y), l(null);
+			} catch (c) {
+				l(c);
 			}
 		}, "syncfs"),
-		getLocalSet: o((n) => {
-			let i = Object.create(null);
-			function c(u) {
+		getLocalSet: o((r) => {
+			let a = Object.create(null);
+			function l(u) {
 				return u !== "." && u !== "..";
 			}
-			o(c, "isRealDir");
-			function l(u) {
-				return (f) => s.join2(u, f);
+			o(l, "isRealDir");
+			function c(u) {
+				return (y) => i.join2(u, y);
 			}
-			o(l, "toAbsolute");
-			let d = t.readdir(n.mountpoint).filter(c).map(l(n.mountpoint));
+			o(c, "toAbsolute");
+			let d = t.readdir(r.mountpoint).filter(l).map(c(r.mountpoint));
 			for (; d.length;) {
-				let u = d.pop(), f = t.stat(u);
-				t.isDir(f.mode) && d.push.apply(d, t.readdir(u).filter(c).map(l(u))), i[u] = {
-					timestamp: f.mtime,
-					mode: f.mode
+				let u = d.pop(), y = t.stat(u);
+				t.isDir(y.mode) && d.push.apply(d, t.readdir(u).filter(l).map(c(u))), a[u] = {
+					timestamp: y.mtime,
+					mode: y.mode
 				};
 			}
 			return {
 				type: "local",
-				entries: i
+				entries: a
 			};
 		}, "getLocalSet"),
-		getRemoteSet: o(async (n) => {
-			let i = Object.create(null), c = await ve(n.opts.fileSystemHandle);
-			for (let [l, d] of c) l !== "." && (i[s.join2(n.mountpoint, l)] = {
+		getRemoteSet: o(async (r) => {
+			let a = Object.create(null), l = await me(r.opts.fileSystemHandle);
+			for (let [c, d] of l) c !== "." && (a[i.join2(r.mountpoint, c)] = {
 				timestamp: d.kind === "file" ? new Date((await d.getFile()).lastModified) : new Date(),
-				mode: d.kind === "file" ? a.FILE_MODE : a.DIR_MODE
+				mode: d.kind === "file" ? s.FILE_MODE : s.DIR_MODE
 			});
 			return {
 				type: "remote",
-				entries: i,
-				handles: c
+				entries: a,
+				handles: l
 			};
 		}, "getRemoteSet"),
-		loadLocalEntry: o((n) => {
-			let c = t.lookupPath(n).node, l = t.stat(n);
-			if (t.isDir(l.mode)) return {
-				timestamp: l.mtime,
-				mode: l.mode
+		loadLocalEntry: o((r) => {
+			let l = t.lookupPath(r, {}).node, c = t.stat(r);
+			if (t.isDir(c.mode)) return {
+				timestamp: c.mtime,
+				mode: c.mode
 			};
-			if (t.isFile(l.mode)) return c.contents = r.getFileDataAsTypedArray(c), {
-				timestamp: l.mtime,
-				mode: l.mode,
-				contents: c.contents
+			if (t.isFile(c.mode)) return l.contents = n.getFileDataAsTypedArray(l), {
+				timestamp: c.mtime,
+				mode: c.mode,
+				contents: l.contents
 			};
 			throw new Error("node type not supported");
 		}, "loadLocalEntry"),
-		storeLocalEntry: o((n, i) => {
-			if (t.isDir(i.mode)) t.mkdirTree(n, i.mode);
-else if (t.isFile(i.mode)) t.writeFile(n, i.contents, { canOwn: !0 });
+		storeLocalEntry: o((r, a) => {
+			if (t.isDir(a.mode)) t.mkdirTree(r, a.mode);
+else if (t.isFile(a.mode)) t.writeFile(r, a.contents, { canOwn: !0 });
 else throw new Error("node type not supported");
-			t.chmod(n, i.mode), t.utime(n, i.timestamp, i.timestamp);
+			t.chmod(r, a.mode), t.utime(r, a.timestamp, a.timestamp);
 		}, "storeLocalEntry"),
-		removeLocalEntry: o((n) => {
-			var i = t.stat(n);
-			t.isDir(i.mode) ? t.rmdir(n) : t.isFile(i.mode) && t.unlink(n);
+		removeLocalEntry: o((r) => {
+			var a = t.stat(r);
+			t.isDir(a.mode) ? t.rmdir(r) : t.isFile(a.mode) && t.unlink(r);
 		}, "removeLocalEntry"),
-		loadRemoteEntry: o(async (n) => {
-			if (n.kind === "file") {
-				let i = await n.getFile();
+		loadRemoteEntry: o(async (r) => {
+			if (r.kind === "file") {
+				let a = await r.getFile();
 				return {
-					contents: new Uint8Array(await i.arrayBuffer()),
-					mode: a.FILE_MODE,
-					timestamp: new Date(i.lastModified)
+					contents: new Uint8Array(await a.arrayBuffer()),
+					mode: s.FILE_MODE,
+					timestamp: new Date(a.lastModified)
 				};
 			} else {
-				if (n.kind === "directory") return {
-					mode: a.DIR_MODE,
+				if (r.kind === "directory") return {
+					mode: s.DIR_MODE,
 					timestamp: new Date()
 				};
-				throw new Error("unknown kind: " + n.kind);
+				throw new Error("unknown kind: " + r.kind);
 			}
 		}, "loadRemoteEntry"),
-		storeRemoteEntry: o(async (n, i, c) => {
-			let l = n.get(s.dirname(i)), d = t.isFile(c.mode) ? await l.getFileHandle(s.basename(i), { create: !0 }) : await l.getDirectoryHandle(s.basename(i), { create: !0 });
+		storeRemoteEntry: o(async (r, a, l) => {
+			let c = r.get(i.dirname(a)), d = t.isFile(l.mode) ? await c.getFileHandle(i.basename(a), { create: !0 }) : await c.getDirectoryHandle(i.basename(a), { create: !0 });
 			if (d.kind === "file") {
 				let u = await d.createWritable();
-				await u.write(c.contents), await u.close();
+				await u.write(l.contents), await u.close();
 			}
-			n.set(i, d);
+			r.set(a, d);
 		}, "storeRemoteEntry"),
-		removeRemoteEntry: o(async (n, i) => {
-			await n.get(s.dirname(i)).removeEntry(s.basename(i)), n.delete(i);
+		removeRemoteEntry: o(async (r, a) => {
+			await r.get(i.dirname(a)).removeEntry(i.basename(a)), r.delete(a);
 		}, "removeRemoteEntry"),
-		reconcile: o(async (n, i, c) => {
-			let l = 0, d = [];
-			Object.keys(i.entries).forEach(function(m) {
-				let y = i.entries[m], w = c.entries[m];
-				(!w || t.isFile(y.mode) && y.timestamp.getTime() > w.timestamp.getTime()) && (d.push(m), l++);
+		reconcile: o(async (r, a, l) => {
+			let c = 0, d = [];
+			Object.keys(a.entries).forEach(function(m) {
+				let g = a.entries[m], h = l.entries[m];
+				(!h || t.isFile(g.mode) && g.timestamp.getTime() > h.timestamp.getTime()) && (d.push(m), c++);
 			}), d.sort();
 			let u = [];
-			if (Object.keys(c.entries).forEach(function(m) {
-				i.entries[m] || (u.push(m), l++);
-			}), u.sort().reverse(), !l) return;
-			let f = i.type === "remote" ? i.handles : c.handles;
+			if (Object.keys(l.entries).forEach(function(m) {
+				a.entries[m] || (u.push(m), c++);
+			}), u.sort().reverse(), !c) return;
+			let y = a.type === "remote" ? a.handles : l.handles;
 			for (let m of d) {
-				let y = s.normalize(m.replace(n.mountpoint, "/")).substring(1);
-				if (c.type === "local") {
-					let w = f.get(y), ie = await a.loadRemoteEntry(w);
-					a.storeLocalEntry(m, ie);
+				let g = i.normalize(m.replace(r.mountpoint, "/")).substring(1);
+				if (l.type === "local") {
+					let h = y.get(g), Q = await s.loadRemoteEntry(h);
+					s.storeLocalEntry(m, Q);
 				} else {
-					let w = a.loadLocalEntry(m);
-					await a.storeRemoteEntry(f, y, w);
+					let h = s.loadLocalEntry(m);
+					await s.storeRemoteEntry(y, g, h);
 				}
 			}
-			for (let m of u) if (c.type === "local") a.removeLocalEntry(m);
+			for (let m of u) if (l.type === "local") s.removeLocalEntry(m);
 else {
-				let y = s.normalize(m.replace(n.mountpoint, "/")).substring(1);
-				await a.removeRemoteEntry(f, y);
+				let g = i.normalize(m.replace(r.mountpoint, "/")).substring(1);
+				await s.removeRemoteEntry(y, g);
 			}
 		}, "reconcile")
 	};
-	e.FS.filesystems.NATIVEFS_ASYNC = a;
+	e.FS.filesystems.NATIVEFS_ASYNC = s;
 }
-async function te() {
-	let e = await Se;
+async function K() {
+	let e = await ye;
 	if (e) return e.exports;
 	let t = Symbol("error marker");
 	return {
 		create_sentinel: o(() => t, "create_sentinel"),
-		is_sentinel: o((r) => r === t, "is_sentinel")
+		is_sentinel: o((n) => n === t, "is_sentinel")
 	};
 }
-function ne(e) {
+function Y(e) {
 	let t = {
+		config: e,
+		runtimeEnv: f
+	}, n = {
 		noImageDecoding: !0,
 		noAudioDecoding: !0,
 		noWasmDecoding: !1,
-		preRun: Ne(e),
+		preRun: he(e),
 		print: e.stdout,
 		printErr: e.stderr,
-		onExit(r) {
-			t.exitCode = r;
+		onExit(i) {
+			n.exitCode = i;
 		},
 		thisProgram: e._sysExecutable,
 		arguments: e.args,
-		API: { config: e },
-		locateFile: o((r) => e.indexURL + r, "locateFile"),
-		instantiateWasm: Fe(e.indexURL)
+		API: t,
+		locateFile: o((i) => e.indexURL + i, "locateFile"),
+		instantiateWasm: Ne(e.indexURL)
 	};
-	return t;
+	return n;
 }
-function we(e) {
+function ge(e) {
 	return function(t) {
-		let r = "/";
+		let n = "/";
 		try {
 			t.FS.mkdirTree(e);
-		} catch (s) {
-			console.error(`Error occurred while making a home directory '${e}':`), console.error(s), console.error(`Using '${r}' for a home directory instead`), e = r;
+		} catch (i) {
+			console.error(`Error occurred while making a home directory '${e}':`), console.error(i), console.error(`Using '${n}' for a home directory instead`), e = n;
 		}
 		t.FS.chdir(e);
 	};
 }
-function Ee(e) {
+function be(e) {
 	return function(t) {
 		Object.assign(t.ENV, e);
 	};
 }
-function Pe(e) {
+function ve(e) {
 	return e ? [async (t) => {
 		t.addRunDependency("fsInitHook");
 		try {
@@ -839,138 +686,158 @@ function Pe(e) {
 		}
 	}] : [];
 }
-function ke(e) {
-	let t = e.HEAPU32[e._Py_Version >>> 2], r = t >>> 24 & 255, s = t >>> 16 & 255, a = t >>> 8 & 255;
+function Ee(e) {
+	let t = e.HEAPU32[e._Py_Version >>> 2], n = t >>> 24 & 255, i = t >>> 16 & 255, s = t >>> 8 & 255;
 	return [
-		r,
-		s,
-		a
+		n,
+		i,
+		s
 	];
 }
-function Ie(e) {
-	let t = K(e);
-	return async (r) => {
-		r.API.pyVersionTuple = ke(r);
-		let [s, a] = r.API.pyVersionTuple;
-		r.FS.mkdirTree("/lib"), r.API.sitePackages = `/lib/python${s}.${a}/site-packages`, r.FS.mkdirTree(r.API.sitePackages), r.addRunDependency("install-stdlib");
+function Pe(e) {
+	let t = j(e);
+	return async (n) => {
+		n.API.pyVersionTuple = Ee(n);
+		let [i, s] = n.API.pyVersionTuple;
+		n.FS.mkdirTree("/lib"), n.API.sitePackages = `/lib/python${i}.${s}/site-packages`, n.FS.mkdirTree(n.API.sitePackages), n.addRunDependency("install-stdlib");
 		try {
-			let n = await t;
-			r.FS.writeFile(`/lib/python${s}${a}.zip`, n);
-		} catch (n) {
-			console.error("Error occurred while installing the standard library:"), console.error(n);
+			let r = await t;
+			n.FS.writeFile(`/lib/python${i}${s}.zip`, r);
+		} catch (r) {
+			console.error("Error occurred while installing the standard library:"), console.error(r);
 		} finally {
-			r.removeRunDependency("install-stdlib");
+			n.removeRunDependency("install-stdlib");
 		}
 	};
 }
-function Ne(e) {
+function he(e) {
 	let t;
 	return e.stdLibURL != null ? t = e.stdLibURL : t = e.indexURL + "python_stdlib.zip", [
-		Ie(t),
-		we(e.env.HOME),
-		Ee(e.env),
-		Z,
-		...Pe(e.fsInit)
+		Pe(t),
+		ge(e.env.HOME),
+		be(e.env),
+		q,
+		...ve(e.fsInit)
 	];
 }
-function Fe(e) {
+function Ne(e) {
 	if (typeof WasmOffsetConverter < "u") return;
-	let { binary: t, response: r } = F(e + "pyodide.asm.wasm"), s = te();
-	return function(a, n) {
+	let { binary: t, response: n } = R(e + "pyodide.asm.wasm"), i = K();
+	return function(s, r) {
 		return async function() {
-			a.sentinel = await s;
+			s.sentinel = await i;
 			try {
-				let i;
-				r ? i = await WebAssembly.instantiateStreaming(r, a) : i = await WebAssembly.instantiate(await t, a);
-				let { instance: c, module: l } = i;
-				n(c, l);
-			} catch (i) {
-				console.warn("wasm instantiation failed!"), console.warn(i);
+				let a;
+				n ? a = await WebAssembly.instantiateStreaming(n, s) : a = await WebAssembly.instantiate(await t, s);
+				let { instance: l, module: c } = a;
+				r(l, c);
+			} catch (a) {
+				console.warn("wasm instantiation failed!"), console.warn(a);
 			}
 		}(), {};
 	};
 }
-function _(e) {
+function k(e) {
 	return e === void 0 || e.endsWith("/") ? e : e + "/";
 }
-async function at(e = {}) {
-	if (e.lockFileContents && e.lockFileURL) throw new Error("Can't pass both lockFileContents and lockFileURL");
-	await C();
-	let t = e.indexURL || await X();
-	t = _(N(t));
-	let r = e;
-	if (r.packageBaseUrl = _(r.packageBaseUrl), r.cdnUrl = _(r.packageBaseUrl ?? `https://cdn.jsdelivr.net/pyodide/v${B}/full/`), !e.lockFileContents) {
-		let f = e.lockFileURL ?? t + "pyodide-lock.json";
-		r.lockFileContents = G(f), r.packageBaseUrl ??= Q(f);
+async function Se(e = {}) {
+	if (await T(), e.lockFileContents && e.lockFileURL) throw new Error("Can't pass both lockFileContents and lockFileURL");
+	let t = e.indexURL || await z();
+	if (t = k(_(t)), e.packageBaseUrl = k(e.packageBaseUrl), e.cdnUrl = k(e.packageBaseUrl ?? `https://cdn.jsdelivr.net/pyodide/v${U}/full/`), !e.lockFileContents) {
+		let s = e.lockFileURL ?? t + "pyodide-lock.json";
+		e.lockFileContents = V(s), e.packageBaseUrl ??= J(s);
 	}
-	r.indexURL = t, r.packageCacheDir && (r.packageCacheDir = _(N(r.packageCacheDir)));
-	let s = {
+	e.indexURL = t, e.packageCacheDir && (e.packageCacheDir = k(_(e.packageCacheDir)));
+	let n = {
 		fullStdLib: !1,
 		jsglobals: globalThis,
-		stdin: globalThis.prompt ? globalThis.prompt : void 0,
+		stdin: globalThis.prompt ? () => globalThis.prompt() : void 0,
 		args: [],
 		env: {},
 		packages: [],
-		packageCacheDir: r.packageBaseUrl,
+		packageCacheDir: e.packageBaseUrl,
 		enableRunUntilComplete: !0,
 		checkAPIVersion: !0,
-		BUILD_ID: "cc7a4bb4c6f36f12592fef0934292b5fddb0e313ca5dc4a5a9519bb7610c67e3"
-	}, a = Object.assign(s, r);
-	a.env.HOME ??= "/home/pyodide", a.env.PYTHONINSPECT ??= "1";
-	let n = ne(a), i = n.API;
-	if (i.lockFilePromise = Promise.resolve(r.lockFileContents), typeof _createPyodideModule != "function") {
-		let f = `${a.indexURL}pyodide.asm.js`;
-		await I(f);
-	}
-	let c;
-	if (e._loadSnapshot) {
-		let f = await e._loadSnapshot;
-		ArrayBuffer.isView(f) ? c = f : c = new Uint8Array(f), n.noInitialRun = !0, n.INITIAL_MEMORY = c.length;
-	}
-	let l = await _createPyodideModule(n);
-	if (n.exitCode !== void 0) throw new l.ExitStatus(n.exitCode);
-	if (e.pyproxyToStringRepr && i.setPyProxyToStringMethod(!0), e.convertNullToNone && i.setCompatNullToNone(!0), i.version !== B && a.checkAPIVersion) throw new Error(`Pyodide version does not match: '${B}' <==> '${i.version}'. If you updated the Pyodide version, make sure you also updated the 'indexURL' parameter passed to loadPyodide.`);
-	l.locateFile = (f) => {
-		throw f.endsWith(".so") ? new Error(`Failed to find dynamic library "${f}"`) : new Error(`Unexpected call to locateFile("${f}")`);
-	};
-	let d;
-	c && (d = i.restoreSnapshot(c));
-	let u = i.finalizeBootstrap(d, e._snapshotDeserializer);
-	return i.sys.path.insert(0, ""), i._pyodide.set_excepthook(), await i.packageIndexReady, i.initializeStreams(a.stdin, a.stdout, a.stderr), u;
+		BUILD_ID: "761936574707325565bed16f46bb59050f9a5477dab28ba3db09f3fb41ea89e7"
+	}, i = Object.assign(n, e);
+	return i.env.HOME ??= "/home/pyodide", i.env.PYTHONINSPECT ??= "1", i;
 }
-var oe, o, A, W, E, P, k, ae, ce, R, b, v, h, O, de, $, g, T, j, Te, ue, H, V, z, De, x, J, D, Y, q, U, N, M, F, I, ve, ee, Se, re, B;
-var init_pyodide = __esm({ "node_modules/.pnpm/pyodide@0.28.3/node_modules/pyodide/pyodide.mjs"() {
-	oe = Object.defineProperty;
-	o = (e, t) => oe(e, "name", {
+function Ie(e) {
+	let t = Y(e), n = t.API;
+	return n.lockFilePromise = Promise.resolve(e.lockFileContents), t;
+}
+async function we(e) {
+	if (typeof _createPyodideModule != "function") {
+		let t = `${e.indexURL}pyodide.asm.js`;
+		await w(t);
+	}
+}
+async function _e(e, t) {
+	if (!e._loadSnapshot) return;
+	let n = await e._loadSnapshot, i = ArrayBuffer.isView(n) ? n : new Uint8Array(n);
+	return t.noInitialRun = !0, t.INITIAL_MEMORY = i.length, i;
+}
+async function Re(e) {
+	let t = await _createPyodideModule(e);
+	if (e.exitCode !== void 0) throw new t.ExitStatus(e.exitCode);
+	return t;
+}
+function ke(e, t) {
+	let n = e.API;
+	if (t.pyproxyToStringRepr && n.setPyProxyToStringMethod(!0), t.convertNullToNone && n.setCompatNullToNone(!0), t.toJsLiteralMap && n.setCompatToJsLiteralMap(!0), n.version !== U && t.checkAPIVersion) throw new Error(`Pyodide version does not match: '${U}' <==> '${n.version}'. If you updated the Pyodide version, make sure you also updated the 'indexURL' parameter passed to loadPyodide.`);
+	e.locateFile = (i) => {
+		throw i.endsWith(".so") ? new Error(`Failed to find dynamic library "${i}"`) : new Error(`Unexpected call to locateFile("${i}")`);
+	};
+}
+function Ae(e, t, n) {
+	let i = e.API, s;
+	return t && (s = i.restoreSnapshot(t)), i.finalizeBootstrap(s, n._snapshotDeserializer);
+}
+async function Fe(e, t) {
+	let n = e._api;
+	return n.sys.path.insert(0, ""), n._pyodide.set_excepthook(), await n.packageIndexReady, n.initializeStreams(t.stdin, t.stdout, t.stderr), e;
+}
+async function ct(e = {}) {
+	let t = await Se(e), n = Ie(t);
+	await we(t);
+	let i = await _e(t, n), s = await Re(n);
+	ke(s, t);
+	let r = Ae(s, i, t);
+	return await Fe(r, t);
+}
+var Z, o, A, W, N, S, I, te, ne, F, b, v, E, O, ie, M, f, $, D, H, B, L, _, C, R, w, me, G, ye, X, U;
+var init_pyodide = __esm({ "node_modules/.pnpm/pyodide@0.29.0/node_modules/pyodide/pyodide.mjs"() {
+	Z = Object.defineProperty;
+	o = (e, t) => Z(e, "name", {
 		value: t,
 		configurable: !0
-	}), A = ((e) => typeof require < "u" ? require : typeof Proxy < "u" ? new Proxy(e, { get: (t, r) => (typeof require < "u" ? require : t)[r] }) : e)(function(e) {
+	}), A = ((e) => typeof require < "u" ? require : typeof Proxy < "u" ? new Proxy(e, { get: (t, n) => (typeof require < "u" ? require : t)[n] }) : e)(function(e) {
 		if (typeof require < "u") return require.apply(this, arguments);
 		throw Error("Dynamic require of \"" + e + "\" is not supported");
 	});
 	W = (() => {
 		for (var e = new Uint8Array(128), t = 0; t < 64; t++) e[t < 26 ? t + 65 : t < 52 ? t + 71 : t < 62 ? t - 4 : t * 4 - 205] = t;
-		return (r) => {
-			for (var s = r.length, a = new Uint8Array((s - (r[s - 1] == "=") - (r[s - 2] == "=")) * 3 / 4 | 0), n = 0, i = 0; n < s;) {
-				var c = e[r.charCodeAt(n++)], l = e[r.charCodeAt(n++)], d = e[r.charCodeAt(n++)], u = e[r.charCodeAt(n++)];
-				a[i++] = c << 2 | l >> 4, a[i++] = l << 4 | d >> 2, a[i++] = d << 6 | u;
+		return (n) => {
+			for (var i = n.length, s = new Uint8Array((i - (n[i - 1] == "=") - (n[i - 2] == "=")) * 3 / 4 | 0), r = 0, a = 0; r < i;) {
+				var l = e[n.charCodeAt(r++)], c = e[n.charCodeAt(r++)], d = e[n.charCodeAt(r++)], u = e[n.charCodeAt(r++)];
+				s[a++] = l << 2 | c >> 4, s[a++] = c << 4 | d >> 2, s[a++] = d << 6 | u;
 			}
-			return a;
+			return s;
 		};
 	})();
-	o(se, "_isNumber");
-	o(S, "_capitalize");
-	o(L, "_getter");
-	E = [
+	o(ee, "_isNumber");
+	o(P, "_capitalize");
+	o(x, "_getter");
+	N = [
 		"isConstructor",
 		"isEval",
 		"isNative",
 		"isToplevel"
-	], P = ["columnNumber", "lineNumber"], k = [
+	], S = ["columnNumber", "lineNumber"], I = [
 		"fileName",
 		"functionName",
 		"source"
-	], ae = ["args"], ce = ["evalOrigin"], R = E.concat(P, k, ae, ce);
+	], te = ["args"], ne = ["evalOrigin"], F = N.concat(S, I, te, ne);
 	o(p, "StackFrame");
 	p.prototype = {
 		getArgs: o(function() {
@@ -989,54 +856,56 @@ else if (e instanceof Object) this.evalOrigin = new p(e);
 else throw new TypeError("Eval Origin must be an Object or StackFrame");
 		}, "setEvalOrigin"),
 		toString: o(function() {
-			var e = this.getFileName() || "", t = this.getLineNumber() || "", r = this.getColumnNumber() || "", s = this.getFunctionName() || "";
-			return this.getIsEval() ? e ? "[eval] (" + e + ":" + t + ":" + r + ")" : "[eval]:" + t + ":" + r : s ? s + " (" + e + ":" + t + ":" + r + ")" : e + ":" + t + ":" + r;
+			var e = this.getFileName() || "", t = this.getLineNumber() || "", n = this.getColumnNumber() || "", i = this.getFunctionName() || "";
+			return this.getIsEval() ? e ? "[eval] (" + e + ":" + t + ":" + n + ")" : "[eval]:" + t + ":" + n : i ? i + " (" + e + ":" + t + ":" + n + ")" : e + ":" + t + ":" + n;
 		}, "toString")
 	};
 	p.fromString = o(function(t) {
-		var r = t.indexOf("("), s = t.lastIndexOf(")"), a = t.substring(0, r), n = t.substring(r + 1, s).split(","), i = t.substring(s + 1);
-		if (i.indexOf("@") === 0) var c = /@(.+?)(?::(\d+))?(?::(\d+))?$/.exec(i, ""), l = c[1], d = c[2], u = c[3];
+		var n = t.indexOf("("), i = t.lastIndexOf(")"), s = t.substring(0, n), r = t.substring(n + 1, i).split(","), a = t.substring(i + 1);
+		if (a.indexOf("@") === 0) var l = /@(.+?)(?::(\d+))?(?::(\d+))?$/.exec(a, ""), c = l[1], d = l[2], u = l[3];
 		return new p({
-			functionName: a,
-			args: n || void 0,
-			fileName: l,
+			functionName: s,
+			args: r || void 0,
+			fileName: c,
 			lineNumber: d || void 0,
 			columnNumber: u || void 0
 		});
 	}, "StackFrame$$fromString");
-	for (b = 0; b < E.length; b++) p.prototype["get" + S(E[b])] = L(E[b]), p.prototype["set" + S(E[b])] = function(e) {
+	for (b = 0; b < N.length; b++) p.prototype["get" + P(N[b])] = x(N[b]), p.prototype["set" + P(N[b])] = function(e) {
 		return function(t) {
 			this[e] = !!t;
 		};
-	}(E[b]);
-	for (v = 0; v < P.length; v++) p.prototype["get" + S(P[v])] = L(P[v]), p.prototype["set" + S(P[v])] = function(e) {
+	}(N[b]);
+	for (v = 0; v < S.length; v++) p.prototype["get" + P(S[v])] = x(S[v]), p.prototype["set" + P(S[v])] = function(e) {
 		return function(t) {
-			if (!se(t)) throw new TypeError(e + " must be a Number");
+			if (!ee(t)) throw new TypeError(e + " must be a Number");
 			this[e] = Number(t);
 		};
-	}(P[v]);
-	for (h = 0; h < k.length; h++) p.prototype["get" + S(k[h])] = L(k[h]), p.prototype["set" + S(k[h])] = function(e) {
+	}(S[v]);
+	for (E = 0; E < I.length; E++) p.prototype["get" + P(I[E])] = x(I[E]), p.prototype["set" + P(I[E])] = function(e) {
 		return function(t) {
 			this[e] = String(t);
 		};
-	}(k[h]);
+	}(I[E]);
 	O = p;
-	o(le, "ErrorStackParser");
-	de = new le();
-	$ = de;
-	g = typeof process == "object" && typeof process.versions == "object" && typeof process.versions.node == "string" && !process.browser, T = g && typeof module < "u" && typeof module.exports < "u" && typeof A < "u" && typeof __dirname < "u", j = g && !T, Te = typeof globalThis.Bun < "u", ue = typeof Deno < "u", H = !g && !ue, V = H && typeof window == "object" && typeof document == "object" && typeof document.createElement == "function" && "sessionStorage" in window && typeof importScripts != "function", z = H && typeof importScripts == "function" && typeof self == "object", De = typeof navigator == "object" && typeof navigator.userAgent == "string" && navigator.userAgent.indexOf("Chrome") == -1 && navigator.userAgent.indexOf("Safari") > -1, x = typeof read == "function" && typeof load == "function";
-	o(C, "initNodeModules");
-	o(fe, "node_resolvePath");
-	o(me, "browser_resolvePath");
-	g ? N = fe : x ? N = o((e) => e, "resolvePath") : N = me;
-	g || (M = "/");
-	o(pe, "node_getBinaryResponse");
-	o(ge, "shell_getBinaryResponse");
-	o(ye, "browser_getBinaryResponse");
-	g ? F = pe : x ? F = ge : F = ye;
-	o(K, "loadBinaryFile");
-	if (V) I = o(async (e) => await import(e), "loadScript");
-else if (z) I = o(async (e) => {
+	o(re, "ErrorStackParser");
+	ie = new re();
+	M = ie;
+	o(oe, "getGlobalRuntimeEnv");
+	f = oe();
+	o(ae, "calculateDerivedFlags");
+	o(T, "initNodeModules");
+	o(se, "node_resolvePath");
+	o(le, "browser_resolvePath");
+	f.IN_NODE ? _ = se : f.IN_SHELL ? _ = o((e) => e, "resolvePath") : _ = le;
+	f.IN_NODE || (C = "/");
+	o(ce, "node_getBinaryResponse");
+	o(de, "shell_getBinaryResponse");
+	o(ue, "browser_getBinaryResponse");
+	f.IN_NODE ? R = ce : f.IN_SHELL ? R = de : R = ue;
+	o(j, "loadBinaryFile");
+	if (f.IN_BROWSER_MAIN_THREAD) w = o(async (e) => await import(e), "loadScript");
+else if (f.IN_BROWSER_WEB_WORKER) w = o(async (e) => {
 		try {
 			globalThis.importScripts(e);
 		} catch (t) {
@@ -1044,56 +913,64 @@ else if (z) I = o(async (e) => {
 else throw t;
 		}
 	}, "loadScript");
-else if (g) I = be;
-else if (x) I = load;
+else if (f.IN_NODE) w = fe;
+else if (f.IN_SHELL) w = load;
 else throw new Error("Cannot determine runtime environment");
-	o(be, "nodeLoadScript");
-	o(G, "loadLockFile");
-	o(X, "calculateDirname");
-	o(Q, "calculateInstallBaseUrl");
-	o(Z, "initializeNativeFS");
-	ve = o(async (e) => {
+	o(fe, "nodeLoadScript");
+	o(V, "loadLockFile");
+	o(z, "calculateDirname");
+	o(J, "calculateInstallBaseUrl");
+	o(q, "initializeNativeFS");
+	me = o(async (e) => {
 		let t = [];
-		async function r(a) {
-			for await (let n of a.values()) t.push(n), n.kind === "directory" && await r(n);
+		async function n(s) {
+			for await (let r of s.values()) t.push(r), r.kind === "directory" && await n(r);
 		}
-		o(r, "collect"), await r(e);
-		let s = new Map();
-		s.set(".", e);
-		for (let a of t) {
-			let n = (await e.resolve(a)).join("/");
-			s.set(n, a);
+		o(n, "collect"), await n(e);
+		let i = new Map();
+		i.set(".", e);
+		for (let s of t) {
+			let r = (await e.resolve(s)).join("/");
+			i.set(r, s);
 		}
-		return s;
+		return i;
 	}, "getFsHandles");
-	ee = W("AGFzbQEAAAABDANfAGAAAW9gAW8BfwMDAgECByECD2NyZWF0ZV9zZW50aW5lbAAAC2lzX3NlbnRpbmVsAAEKEwIHAPsBAPsbCwkAIAD7GvsUAAs=");
-	Se = async function() {
+	G = W("AGFzbQEAAAABDANfAGAAAW9gAW8BfwMDAgECByECD2NyZWF0ZV9zZW50aW5lbAAAC2lzX3NlbnRpbmVsAAEKEwIHAPsBAPsbCwkAIAD7GvsUAAs=");
+	ye = async function() {
 		if (!(globalThis.navigator && (/iPad|iPhone|iPod/.test(navigator.userAgent) || navigator.platform === "MacIntel" && typeof navigator.maxTouchPoints < "u" && navigator.maxTouchPoints > 1))) try {
-			let t = await WebAssembly.compile(ee);
+			let t = await WebAssembly.compile(G);
 			return await WebAssembly.instantiate(t);
 		} catch (t) {
 			if (t instanceof WebAssembly.CompileError) return;
 			throw t;
 		}
 	}();
-	o(te, "getSentinelImport");
-	o(ne, "createSettings");
-	o(we, "createHomeDirectory");
-	o(Ee, "setEnvironment");
-	o(Pe, "callFsInitHook");
-	o(ke, "computeVersionTuple");
-	o(Ie, "installStdlib");
-	o(Ne, "getFileSystemInitializationFuncs");
-	o(Fe, "getInstantiateWasmFunc");
-	re = "0.28.3";
-	o(_, "withTrailingSlash");
-	B = re;
-	o(at, "loadPyodide");
+	o(K, "getSentinelImport");
+	o(Y, "createSettings");
+	o(ge, "createHomeDirectory");
+	o(be, "setEnvironment");
+	o(ve, "callFsInitHook");
+	o(Ee, "computeVersionTuple");
+	o(Pe, "installStdlib");
+	o(he, "getFileSystemInitializationFuncs");
+	o(Ne, "getInstantiateWasmFunc");
+	X = "0.29.0";
+	o(k, "withTrailingSlash");
+	U = X;
+	o(Se, "initializeConfiguration");
+	o(Ie, "createEmscriptenSettings");
+	o(we, "loadWasmScript");
+	o(_e, "prepareSnapshot");
+	o(Re, "createPyodideModule");
+	o(ke, "configureAPI");
+	o(Ae, "bootstrapPyodide");
+	o(Fe, "finalizeSetup");
+	o(ct, "loadPyodide");
 } });
 
 //#endregion
-//#region (ignored) node_modules/.pnpm/pyodide@0.28.3/node_modules/pyodide
-var require_pyodide = __commonJS({ "node_modules/.pnpm/pyodide@0.28.3/node_modules/pyodide"() {} });
+//#region (ignored) node_modules/.pnpm/pyodide@0.29.0/node_modules/pyodide
+var require_pyodide = __commonJS({ "node_modules/.pnpm/pyodide@0.29.0/node_modules/pyodide"() {} });
 
 //#endregion
 exports.onLoad = onLoad
