@@ -294,7 +294,7 @@ async function load_python_wrapper() {
                 phase_now = almanac.moon_phase(self.eph, now).degrees / 360.0
                 phase_two_days_ago = almanac.moon_phase(self.eph, two_days_ago).degrees / 360.0
 
-                return (phase_now < 0.5) != (phase_two_days_ago < 0.5)
+                return bool((phase_now < 0.5) != (phase_two_days_ago < 0.5))
 
         PythonWrapper()
     `);
