@@ -91,6 +91,15 @@ const settings = () => [
 			store.boosts_button = v;
 		},
 		children: "Remove boosts button and progress in channel list"
+	}),
+	(0, import_web.createComponent)(SwitchItem, {
+		get value() {
+			return store.voice_invite_button;
+		},
+		onChange: (v) => {
+			store.voice_invite_button = v;
+		},
+		children: "Remove voice invite suggestions button"
 	})
 ];
 let cleanup_callbacks = [];
@@ -133,6 +142,10 @@ else elem.setAttribute(`data-${hopefully_unique_id}`, "true");
 			elem.style.display = "none";
 		}));
 	}
+	store.voice_invite_button ??= true;
+	if (store.voice_invite_button) cleanup_callbacks.push(observeDom("[class*=\"animation\"]:has([aria-label*=\"Voice Invite Suggestions\"])", (elem) => {
+		elem.style.display = "none";
+	}));
 }
 function onUnload() {
 	for (const cb of cleanup_callbacks) cb();
