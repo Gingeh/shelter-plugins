@@ -172,7 +172,7 @@ export function onLoad() {
 
   // Invite to Voice button
   store.voice_invite_button ??= true;
-  if (store.boosts_button) {
+  if (store.voice_invite_button) {
     cleanup_callbacks.push(
       observeDom(
         '[class*="animation"]:has([aria-label*="Voice Invite Suggestions"])',
