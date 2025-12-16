@@ -58,6 +58,14 @@ export const settings = () => (
     >
       Remove boosts button and progress in channel list
     </SwitchItem>
+    <SwitchItem
+      value={store.voice_invite_button}
+      onChange={(v: boolean) => {
+        store.voice_invite_button = v;
+      }}
+    >
+      Remove voice invite suggestions button
+    </SwitchItem>
   </>
 );
 
@@ -155,6 +163,19 @@ export function onLoad() {
     cleanup_callbacks.push(
       observeDom(
         "[class*=containerWithMargin__]:has([class*=progressContainer__])",
+        (elem) => {
+          elem.style.display = "none";
+        }
+      )
+    );
+  }
+
+  // Invite to Voice button
+  store.voice_invite_button ??= true;
+  if (store.boosts_button) {
+    cleanup_callbacks.push(
+      observeDom(
+        '[class*="animation"]:has([aria-label*="Voice Invite Suggestions"])',
         (elem) => {
           elem.style.display = "none";
         }
